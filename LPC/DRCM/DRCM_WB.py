@@ -29,6 +29,7 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
+# 从指定文件夹中随机选择文件构建训练、验证和测试数据集的文件列表
 def get_file_list(file_dir, train_num, val_num, test_num):
     train_list = []
     val_list = []
@@ -59,7 +60,7 @@ def read_files(file_path):
     array = []
     for line in lines:
         row = [float(item) for item in line.split(' ')]
-        array.append(row[0:5])
+        array.append(row[0:10])   # 读取10个元素
     return array
 
 class GatedAttention(layers.Layer):
@@ -276,7 +277,7 @@ class GatedAttention(layers.Layer):
 def create_classifier(input_shape):
     original_x = Input(shape=input_shape)
 
-    x = Embedding(512, 64)(original_x)
+    x = Embedding(128, 64)(original_x)      # 修改索引变化范围
     x = TimeDistributed(Flatten())(x)
 
     x = Bidirectional(LSTM(64, return_sequences=True))(x)
@@ -336,16 +337,16 @@ if __name__ == "__main__":
         {"class": 1,
          "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/TXT/English/{}s/{}".format(args.domain, args.method, args.length, args.em_rate)}
     ]
-    RE_FOLDERS = [
-        {"class": 0,
-         "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/Chinese/{}s/0".format(args.domain, args.method, args.length)},
-        {"class": 0,
-         "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/English/{}s/0".format(args.domain, args.method, args.length)},
-        {"class": 1,
-         "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/Chinese/{}s/{}".format(args.domain, args.method, args.length, args.em_rate)},
-        {"class": 1,
-         "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/English/{}s/{}".format(args.domain, args.method, args.length, args.em_rate)}
-    ]
+    # RE_FOLDERS = [
+    #     {"class": 0,
+    #      "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/Chinese/{}s/0".format(args.domain, args.method, args.length)},
+    #     {"class": 0,
+    #      "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/English/{}s/0".format(args.domain, args.method, args.length)},
+    #     {"class": 1,
+    #      "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/Chinese/{}s/{}".format(args.domain, args.method, args.length, args.em_rate)},
+    #     {"class": 1,
+    #      "folder": "/home/barryxxz/audiodata/AMR_NB/{}/{}/Universe/ReCompress/TXT/English/{}s/{}".format(args.domain, args.method, args.length, args.em_rate)}
+    # ]
     print(FOLDERS)
 
     model_path = './weights/lpc_weights_{}_{}s_{}.h5'.format(args.method, args.length, args.em_rate)
@@ -354,9 +355,9 @@ if __name__ == "__main__":
     train_file, val_file, test_file = get_file_list(FOLDERS, args.train_num, args.val_num, args.test_num)
     # re_train_file, re_val_file, re_test_file = get_file_list(RE_FOLDERS, args.train_num, args.val_num, args.test_num)
 
-    x_train = np.array(Parallel(n_jobs=6)(delayed(read_files)(item[0]) for item in train_file))
+    x_train = np.array(Parallel(n_jobs=6)(delayed(read_files)(item[0]) for item in train_file))             # 存储训练数据的特征
     # re_x_train = np.array(Parallel(n_jobs=6)(delayed(read_files)(item[0]) for item in re_train_file))
-    y_train_ori = np.array([item[1] for item in train_file])
+    y_train_ori = np.array([item[1] for item in train_file])                                                # 存储训练数据的标签
 
     x_val = np.array(Parallel(n_jobs=6)(delayed(read_files)(item[0]) for item in val_file))
     # re_x_val = np.array(Parallel(n_jobs=6)(delayed(read_files)(item[0]) for item in re_val_file))
